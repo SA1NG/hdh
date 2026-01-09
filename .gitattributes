@@ -1,0 +1,12 @@
+# Preserve LF line endings for C source files (for WSL/Linux compilation)
+*.c text eol=lf
+*.h text eol=lf
+*.sh text eol=lf
+
+# Let Git handle other text files normally
+*.txt text
+*.md text
+
+# Binary files
+*.o binary
+program binary
