@@ -9,7 +9,7 @@ void get_datetime(char *buf, size_t buf_size)
     strftime(buf, buf_size, "%Y-%m-%d %H:%M:%S", &tm_now);
 }
 
-int create_events(char c, Event* e, int producer_id, int process_time)
+int create_events(char c, Event* e, int producer_id)
 {
     pthread_mutex_lock(&event_count_mutex);
     
@@ -20,7 +20,7 @@ int create_events(char c, Event* e, int producer_id, int process_time)
         e->type = EVENT_SENSOR;
         e->data.sensor_value = rand() % 100;
         e->processing_time = 1;  // SENSOR: 1 second
-        printf("[Producer %d] Create SENSOR #%d (1s)\n", producer_id, e->number.sensor_event);
+        printf("[Producer-%d] ✓ Created SENSOR   #%-3d (Process: 1s)\n", producer_id, e->number.sensor_event);
     } 
     else if (c == 't') 
     {
@@ -31,7 +31,7 @@ int create_events(char c, Event* e, int producer_id, int process_time)
         get_datetime(datetime_buf, 32);
         e->data.str = datetime_buf;
         e->processing_time = 3;  // TIME: 3 seconds
-        printf("[Producer %d] Create TIME #%d (3s)\n", producer_id, e->number.time_event);
+        printf("[Producer-%d] ✓ Created TIME     #%-3d (Process: 3s)\n", producer_id, e->number.time_event);
     } 
     else if (c == 'q') 
     {
@@ -49,7 +49,7 @@ int create_events(char c, Event* e, int producer_id, int process_time)
         e->type = EVENT_BUTTON;
         e->data.key = c;
         e->processing_time = 2;  // BUTTON: 2 seconds
-        printf("[Producer %d] Create BUTTON #%d '%c' (2s)\n", producer_id, e->number.button_event, c);
+        printf("[Producer-%d] ✓ Created BUTTON   #%-3d '%c' (Process: 2s)\n", producer_id, e->number.button_event, c);
     }
     else 
     { 
@@ -62,6 +62,9 @@ int create_events(char c, Event* e, int producer_id, int process_time)
 }
 
 int event_come_delay=0;
+static int current_event_index = 0;
+static pthread_mutex_t event_index_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 void* producer_run(void* arg) 
 {
     dataSendToProducer* data_rev_from_main=(dataSendToProducer*)arg;
@@ -78,24 +81,25 @@ void* producer_run(void* arg)
     }
     else if(data_rev_from_main->command_from_user == 3)
     {
-        // Mode 3: Timed events from file
+        // Mode 3: Timed events from file - competitive mode
         int total_events_count = data_rev_from_main->num_timed_events;
-        int events_per_producer = total_events_count / data_rev_from_main->total_producers;
-        int remainder = total_events_count % data_rev_from_main->total_producers;
-        
-        int start_idx = (thread_id - 1) * events_per_producer;
-        if(thread_id - 1 < remainder) start_idx += (thread_id - 1);
-        else start_idx += remainder;
-        
-        int end_idx = start_idx + events_per_producer;
-        if(thread_id - 1 < remainder) end_idx += 1;
-        
-        printf("[Producer %d] Handling events [%d-%d]\n", thread_id, start_idx, end_idx - 1);
-        
         int start_time = time(NULL);
-        for(int i = start_idx; i < end_idx && i < total_events_count; i++)
+        
+        printf("\n[Producer-%d] Started - competing for events...\n", thread_id);
+        
+        while(1)
         {
-            TimedEvent* te = &data_rev_from_main->timed_events[i];
+            // Get next event index atomically
+            pthread_mutex_lock(&event_index_mutex);
+            int my_event_idx = current_event_index;
+            if(my_event_idx >= total_events_count) {
+                pthread_mutex_unlock(&event_index_mutex);
+                break;
+            }
+            current_event_index++;
+            pthread_mutex_unlock(&event_index_mutex);
+            
+            TimedEvent* te = &data_rev_from_main->timed_events[my_event_idx];
             
             // Wait until the event timestamp
             int current_time = time(NULL) - start_time;
@@ -104,7 +108,7 @@ void* producer_run(void* arg)
             }
             
             Event* e = malloc(sizeof(Event));
-            ret = create_events(te->event_char, e, thread_id, TIME_DELAY_SIMULATION);
+            ret = create_events(te->event_char, e, thread_id);
             
             if(ret==-1)
             {
@@ -116,9 +120,13 @@ void* producer_run(void* arg)
         }
         
         // Last producer creates shutdown events
-        if(thread_id == data_rev_from_main->total_producers)
-        {
-            printf("\n[Producer %d] Sending %d SHUTDOWN signals\n",
+        pthread_mutex_lock(&event_index_mutex);
+        static int shutdown_sent = 0;
+        if(!shutdown_sent) {
+            shutdown_sent = 1;
+            pthread_mutex_unlock(&event_index_mutex);
+            
+            printf("\n[Producer-%d] Sending %d SHUTDOWN signal(s)\n",
                 thread_id, data_rev_from_main->total_consumers);
             for(int i = 0; i < data_rev_from_main->total_consumers; i++)
             {
@@ -131,10 +139,12 @@ void* producer_run(void* arg)
                 pthread_mutex_unlock(&event_count_mutex);
                 queue_enqueue(data_rev_from_main->queue, e);
             }
+        } else {
+            pthread_mutex_unlock(&event_index_mutex);
         }
     }
     
-    printf(" PRODUCER #%d Finished\n", thread_id);
+    printf("\n[Producer-%d] ✓ Finished\n", thread_id);
     return NULL;
 }
 

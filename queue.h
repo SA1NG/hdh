@@ -2,7 +2,6 @@
 #define QUEUE_H
 
 #include <pthread.h>
-#include <errno.h>
 #include "event.h"
 #include <stdbool.h>
 #include <stdlib.h>

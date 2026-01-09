@@ -33,7 +33,7 @@ void queue_enqueue(BlockingQueue* q, void* item)
     
     while (queue_is_full(q) && q->running) 
     {
-        printf("[Queue] FULL - Producer blocked\n");
+        printf("    [QUEUE] ⚠  FULL [%d/%d] - Producer waiting...\n", QUEUE_CAPACITY, QUEUE_CAPACITY);
         pthread_cond_wait(&q->not_full, &q->mutex);
     }
     
@@ -59,7 +59,7 @@ void* queue_dequeue(BlockingQueue* q, int consumer_id)
     
     while (queue_is_empty(q) && q->running) 
     {
-        printf("[Queue] EMPTY - Consumer %d blocked\n", consumer_id);
+        printf("    [QUEUE] ⚠  EMPTY [0/%d] - Consumer-%d waiting...\n", QUEUE_CAPACITY, consumer_id);
         pthread_cond_wait(&q->not_empty, &q->mutex);
     }
 

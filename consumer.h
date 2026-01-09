@@ -6,8 +6,6 @@
 #include "event.h"
 #include "queue.h"
 
-#define TIME_DELAY_SIMULATION 3 // 3s
-
 typedef struct
 {
     BlockingQueue* queue;

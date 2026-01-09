@@ -21,28 +21,28 @@ int main()
     TimedEvent* timed_events_global = NULL; // For mode 3
     
     // Get number of producers and consumers
-    printf("%s⚙ CONFIGURATION%s\n", COLOR_YELLOW, COLOR_RESET);
-    printf("Enter number of PRODUCER threads (1-%d): ", MAX_PRODUCERS);
+    printf("\n=== SYSTEM CONFIGURATION ===\n");
+    printf("\nEnter number of PRODUCER threads (1-%d): ", MAX_PRODUCERS);
     scanf("%d", &num_producers);
     if(num_producers < 1) num_producers = 1;
     if(num_producers > MAX_PRODUCERS) num_producers = MAX_PRODUCERS;
     getchar();
     
-    printf("Enter number of CONSUMER threads (1-%d): ", MAX_CONSUMERS);
+    printf("  Enter number of CONSUMER threads (1-%d): ", MAX_CONSUMERS);
     scanf("%d", &num_consumers);
     if(num_consumers < 1) num_consumers = 1;
     if(num_consumers > MAX_CONSUMERS) num_consumers = MAX_CONSUMERS;
     getchar();
     
-    printf("\n%s✓ Starting: %d producers × %d consumers%s\n\n",
-        COLOR_GREEN, num_producers, num_consumers, COLOR_RESET);
+    printf("\n✓ Starting: %d Producer(s) × %d Consumer(s)\n",
+        num_producers, num_consumers);
     
     int mode=0;
-    printf("%s⚙ MODE SELECTION%s\n", COLOR_YELLOW, COLOR_RESET);
-    printf("  1 - Manual input (self-enter keys)\n");
-    printf("  2 - Auto mode (enter string directly)\n");
-    printf("  3 - File input (read from file)\n");
-    printf("Enter mode (1/2/3): ");
+    printf("\n=== MODE SELECTION ===\n");
+    printf("[1] Manual input (self-enter keys)\n");
+    printf("[2] Auto mode (enter string directly)\n");
+    printf("[3] File input (read from file)\n");
+    printf("\nEnter mode (1/2/3): ");
     scanf("%d", &mode); 
     getchar();  // get '\n'
     
@@ -115,7 +115,7 @@ int main()
             }
             fclose(file);
             
-            printf("✓ File loaded: %d timed events\n", idx);
+            printf("\n✓ File loaded: %d timed events\n\n", idx);
             
             // Store globally for later use
             timed_events_global = timed_events;

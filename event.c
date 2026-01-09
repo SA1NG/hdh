@@ -15,7 +15,7 @@ void enqueue_done(Event* e, int slots_have_event)
         case EVENT_TIME: type_str = "TIME"; num = e->number.time_event; break;
         case EVENT_SHUTDOWN: type_str = "SHUTDOWN"; num = e->number.shutdown_event; break;
     }
-    printf("[Queue] Enqueue %s #%d -> Queue: %d/%d\n", type_str, num, slots_have_event, QUEUE_CAPACITY);
+    printf("    [QUEUE] ➜  Enqueue %-8s #%-3d | Queue: [%d/%d]\n", type_str, num, slots_have_event, QUEUE_CAPACITY);
 }
 
 void dequeue_done(Event* e, int slots_have_event, int consumer_id)
@@ -28,7 +28,7 @@ void dequeue_done(Event* e, int slots_have_event, int consumer_id)
         case EVENT_TIME: type_str = "TIME"; num = e->number.time_event; break;
         case EVENT_SHUTDOWN: type_str = "SHUTDOWN"; num = e->number.shutdown_event; break;
     }
-    printf("[Consumer %d] Dequeue %s #%d <- Queue: %d/%d\n", consumer_id, type_str, num, slots_have_event, QUEUE_CAPACITY);
+    printf("    [QUEUE] ←  Dequeue %-8s #%-3d | Queue: [%d/%d] | Consumer-%d\n", type_str, num, slots_have_event, QUEUE_CAPACITY, consumer_id);
 }
 
 

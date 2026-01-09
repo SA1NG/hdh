@@ -11,7 +11,7 @@ void array_key_init()
 
 void handle_sensor(Event* e, int consumer_id) 
 {
-    printf("[Consumer %d] Process: SENSOR #%d Value: %d\n",
+    printf("  [Consumer-%d] ⚙  Processing SENSOR   #%-3d | Value: %d\n",
         consumer_id, e->number.sensor_event, e->data.sensor_value);
 }
 
@@ -23,7 +23,7 @@ void handle_button(Event* e, int consumer_id)
         if(e->data.key == button_event[i].key)
         {
             button_event[i].count++;
-            printf("[Consumer %d] Process: BUTTON #%d Key: '%c' (count: %d)\n",
+            printf("  [Consumer-%d] ⚙  Processing BUTTON   #%-3d | Key: '%c' (Total: %d)\n",
                 consumer_id, e->number.button_event, button_event[i].key, button_event[i].count);
             pthread_mutex_unlock(&button_event_mutex);
             return;
@@ -34,7 +34,7 @@ void handle_button(Event* e, int consumer_id)
 
 void handle_time(Event* e, int consumer_id) 
 {
-    printf("[Consumer %d] Process: TIME #%d %s\n",
+    printf("  [Consumer-%d] ⚙  Processing TIME     #%-3d | %s\n",
         consumer_id, e->number.time_event, e->data.str);
     free(e->data.str);
 }
@@ -57,7 +57,7 @@ void* consumer_run(void* arg)
     BlockingQueue* queue = data->queue;
     int thread_id = data->thread_id;
     
-    printf("[Consumer %d] Started\n", thread_id);
+    printf("[Consumer-%d] Started and waiting...\n", thread_id);
 
     while (1) 
     {
@@ -65,13 +65,13 @@ void* consumer_run(void* arg)
         
         if (!e) 
         {
-            printf("[Consumer %d] Queue stopped, exiting\n", thread_id);
+            printf("[Consumer-%d] Queue stopped, exiting\n", thread_id);
             break;
         }
 
         if (e->type == EVENT_SHUTDOWN) 
         {
-            printf("[Consumer %d] Received SHUTDOWN\n", thread_id);
+            printf("[Consumer-%d] Received SHUTDOWN signal\n", thread_id);
             
             // Only first shutdown prints summary
             static int summary_printed = 0;
@@ -81,20 +81,20 @@ void* consumer_run(void* arg)
                 int total = event_count.sensor_event + event_count.button_event + 
                            event_count.time_event + event_count.shutdown_event;
                 printf("\n========================================\n");
-                printf("          EVENT SUMMARY\n");
+                printf("           EVENT SUMMARY\n");
                 printf("========================================\n");
-                printf("  Total Events:      %-4d\n", total);
+                printf("Total Events Processed: %d\n", total);
                 printf("----------------------------------------\n");
-                printf("  SENSOR events:    %-4d\n", event_count.sensor_event);
-                printf("  BUTTON events:    %-4d\n", event_count.button_event);
+                printf("  SENSOR events:        %d\n", event_count.sensor_event);
+                printf("  BUTTON events:        %d\n", event_count.button_event);
                 if(event_count.button_event > 0) {
                     for(int i=0; i<26; i++) {
                         if(button_event[i].count!=0) 
-                            printf("     '%c': %d times\n", button_event[i].key, button_event[i].count); 
+                            printf("    '%c' pressed: %d times\n", button_event[i].key, button_event[i].count); 
                     }
                 }
-                printf("  TIME events:      %-4d\n", event_count.time_event);
-                printf("  SHUTDOWN events:  %-4d\n", event_count.shutdown_event);
+                printf("  TIME events:          %d\n", event_count.time_event);
+                printf("  SHUTDOWN signals:     %d\n", event_count.shutdown_event);
                 printf("========================================\n\n");
             }
             pthread_mutex_unlock(&button_event_mutex);
@@ -107,7 +107,7 @@ void* consumer_run(void* arg)
         free(e);
     }
     
-    printf("[Consumer %d] Finished\n", thread_id);
+    printf("[Consumer-%d] ✓ Finished\n", thread_id);
     return NULL;
 }
 
